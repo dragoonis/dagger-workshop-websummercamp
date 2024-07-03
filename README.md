@@ -165,8 +165,8 @@ dagger call grep-dir --directory=. --pattern=Trust
          string $pattern
     ): string {
          return $this->client->container()->from('alpine:latest')
-             ->withMountedDirectory('/mnt', $directory)
-             ->withWorkdir('/mnt')
+             ->withMountedDirectory('/tmp/app', $directory)
+             ->withWorkdir('/tmp/app')
              ->withExec(["grep", '-R', $pattern, '.'])
              ->stdout();
      }
@@ -176,8 +176,19 @@ dagger call grep-dir --directory=. --pattern=Trust
 
 Add this to your file
 
-``` php
+Make use `use Dagger\Terminal;` is at the top of the file
 
+``` php
+     #[DaggerFunction('Search a directory for lines matching a pattern')]
+    public function terminal(
+         #[DaggerArgument('The directory to mount')]
+         Directory $directory,
+    ): Terminal {
+         return $this->client->container()->from('alpine:latest')
+             ->withMountedDirectory('/tmp/app', $directory)
+             ->withWorkdir('/tmp/app')
+             ->terminal();
+    }
 ```
 
 ### Bring in the new definitions
@@ -185,18 +196,59 @@ Add this to your file
 dagger develop && dagger functions
 ```
 
+```
+dagger call terminal --directory=.
+```
 
-
-## taking a PHP image that doesn't have compose binary in it, and do a FROM and then run a composer install --dev
 
 ### docker build from existing dockerfile (current webapp)
 
+### add ->env builder for PHP image and MySQL image 
+- [ ] make generic function, to return the values ..
+- [ ] make function to return only the DB values
+
+
 ### dagger install the mysql module, and then run dagger develop
 
+```
+dagger install mysql
+
+Maybe check out base
+https://daggerverse.dev/mod/github.com/levlaz/daggerverse/mariadb@250b1d6bc506b9ab68fe5cfce44ce8ed1c5763b9#Mariadb.base
+```
+
 ### take the setup.sh tasks, or the docker-compose exec tasks and move them to ->withExec()
+```
+->withExec(php artisan migrate)
+->withExec(php artisan db:seed)
+```
 
 ### maybe make this a base() function
 
-### call it from caller call integration-tests
+### call it from dagger call integration-tests
+
+```
+->withExec()
+./vendor/bin/phpunit --testdox
+```
 
 ### show on dagger cloud
+
+### create a ->terminal('docker-compose exec database mysql --user=root -pdb_password app_db') command
+
+## GitHub Actions
+
+### push all code to your repo
+```
+git add . && git commit -m "commit" && git push
+```
+
+### add .yml file
+```
+```
+
+### install github actions .yml
+
+# EXTRAS
+
+## taking a PHP image that doesn't have compose binary in it, and do a FROM and then run a composer install --dev

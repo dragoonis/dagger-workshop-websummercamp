@@ -46,7 +46,73 @@ dagger call php-base terminal
 
 
 
-## docker build from existing dockerfile (current webapp)
+## docker build from existing Dockerfile (current webapp)
+``` php
+    #[DaggerFunction('laravel-app-build')]
+    public function laravelAppBuild(
+        #[DaggerArgument('The source code directory')]
+        Directory $source,
+    ): Container {
+
+       return $this->client->container()
+           ->build($source);
+    }
+```
+
+```
+dagger develop && dagger functions
+```
+
+```
+dagger call laravel-app-build --source=. terminal
+```
+
+Then run
+```
+php -v
+
+and
+
+ls -l
+```
+
+## Load Env Vars into Docker Build
+``` php
+
+    #[DaggerFunction('laravel-app-env-vars')]
+    public function laravelAppEnvVars(
+        #[DaggerArgument('The source code directory')]
+        Directory $source,
+    ): string {
+
+        $container = $this->laravelAppBuild($source);
+
+        $container = $this->loadEnvArgs($container, $source);
+
+        return $container->withExec(['env'])->stdout();
+    }
+
+
+    private function loadEnvArgs(Container $container, Directory $source): Container
+    {
+        $envContents = $source->file('.env')->contents();
+        $envVars = parse_ini_string($envContents);
+
+        foreach($envVars as $envVarKey => $envVarValue) {
+            $container = $container->withEnvVariable($envVarKey, $envVarValue);
+        }
+
+        return $container;
+    }
+
+```
+
+```
+dagger develop && dagger functions
+```
+
+
+
 
 
 

@@ -60,10 +60,17 @@ You now have a working docker-based laravel app working, with a MariaDB/MySQL da
 ./test-dagger.sh
 ```
 
+### Log into Dagger Cloud
+
+Run the below command, authenticate using github. Keep the tab open
+```
+dagger login
+```
+
 ### Add dagger to current project
 
 ```
-@todo - dagger init - use paul's fork for dagger --sdk
+dagger init --sdk=github.com/dragoonis/dagger/sdk/php@add-php-runtime .
 ```
 
 ### Make sure it all works - check the available dagger functions
@@ -132,3 +139,64 @@ grep-dir   Search a directory for lines matching a pattern
 ```
 dagger call echo --value="HEYYYYYYY"
 ```
+
+## When mounting code directories, add to exclude file, in dagger.json, but can also exlude from dagger paramteter
+
+dagger.json
+``` json
+  "exclude": [
+    "**/vendor"
+  ],
+```
+
+
+## Mounting your codebase directories into dagger
+
+```
+dagger call grep-dir --directory=. --pattern=Trust
+```
+
+``` php
+    #[DaggerFunction('Search a directory for lines matching a pattern')]
+     public function grepDir(
+         #[DaggerArgument('The directory to search')]
+         Directory $directory,
+         #[DaggerArgument('The pattern to search for')]
+         string $pattern
+    ): string {
+         return $this->client->container()->from('alpine:latest')
+             ->withMountedDirectory('/mnt', $directory)
+             ->withWorkdir('/mnt')
+             ->withExec(["grep", '-R', $pattern, '.'])
+             ->stdout();
+     }
+```
+
+### TERMINAL MODE!!!
+
+Add this to your file
+
+``` php
+
+```
+
+### Bring in the new definitions
+```
+dagger develop && dagger functions
+```
+
+
+
+## taking a PHP image that doesn't have compose binary in it, and do a FROM and then run a composer install --dev
+
+### docker build from existing dockerfile (current webapp)
+
+### dagger install the mysql module, and then run dagger develop
+
+### take the setup.sh tasks, or the docker-compose exec tasks and move them to ->withExec()
+
+### maybe make this a base() function
+
+### call it from caller call integration-tests
+
+### show on dagger cloud

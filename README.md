@@ -127,5 +127,8 @@ echo       Echo the value to standard output
 grep-dir   Search a directory for lines matching a pattern
 ```
 
+### Call it, without any stdout, as it's in the code now
+
+```
 dagger call echo --value="HEYYYYYYY"
 ```

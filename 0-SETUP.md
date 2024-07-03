@@ -1,8 +1,6 @@
-# Preparation - Setting up the 
+# Preparation - Setting up the  system
 
-@todo - put these workshop details inside the dagger-laravel-app repo, so we can be in that context, and type "dagger init" on it.
-
-## Step 0 - Check your system
+## Check your system
 
 You will need
 - docker
@@ -13,7 +11,7 @@ You will need
 ./test-prerequisites.sh
 ```
 
-## Step 1 - Forking the laravel docker app, on github
+## Forking the laravel docker app, on github
 
 Fork it https://github.com/dragoonis/dagger-laravel-app/fork
 
@@ -25,19 +23,13 @@ git clone <my repo> dagger-laravel-app
 cd dagger-laravel-app
 ```
 
-## Step 2 - Install the laravel docker app, locally
+## Install the laravel docker app, locally
 
 ```
 make setup
 ```
 
-### Run the unit tests
-@todo - built some unit tests - just grab some classes, and some unit tests of those classes from another project
-```
-make unit
-```
-
-### Run the integration tests
+## Run the integration tests
 
 ```
 make test

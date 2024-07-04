@@ -111,18 +111,105 @@ ls -l
 dagger develop && dagger functions
 ```
 
+### See all the vars from .env now loaded 
+```
+dagger call laravel-app-env-vars --source=.
+```
 
+## Database Service
 
+### Functions for loading the Environment Variables in general
 
+``` php
 
+    private function loadContainerEnvVars(Container $container, Directory $source, string $prefix = ''): Container
+    {
+        $envVars = $this->getEnvVars($source, $prefix);
 
-### add ->env builder for PHP image and MySQL image 
+        foreach($envVars as $envVarKey => $envVarValue) {
+            $container = $container->withEnvVariable($envVarKey, $envVarValue);
+        }
+
+        return $container;
+    }
+
+    private function getEnvVars(Directory $source, string $prefix = ''): array
+    {
+        $envContents = $source->file('.env')->contents();
+        $envVars = parse_ini_string($envContents);
+        $return = [];
+
+        foreach($envVars as $envVarKey => $envVarValue) {
+            if($prefix === '') {
+                $return[$envVarKey] = $envVarValue;
+                continue;
+            }
+
+            if($prefix !== '' && str_starts_with($envVarKey, $prefix)) {
+                $return[$envVarKey] = $envVarValue;
+            }
+        }
+
+        return $return;
+    }
+```
+
+### Load DB_* env vars, and load up MariaDB as a dagger/docker service
+
+``` php
+    private function getDbService(
+        #[DaggerArgument('The source code directory')]
+        Directory $source,
+    ): Service {
+
+        $dbEnvVars = $this->getEnvVars($source, 'DB_');
+
+        $service = $this->client->container()->from('mariadb:lts-jammy')
+            ->withEnvVariable('MARIADB_DATABASE', $dbEnvVars['DB_DATABASE'])
+            ->withEnvVariable('MARIADB_USER', $dbEnvVars['DB_USERNAME'])
+            ->withEnvVariable('MARIADB_PASSWORD', $dbEnvVars['DB_PASSWORD'])
+            ->withEnvVariable('MARIADB_ROOT_PASSWORD', $dbEnvVars['DB_ROOT_PASSWORD'])
+            ->withExposedPort(3306)
+            ->asService();
+
+        return $service;
+    }
+```
+
+### Putting it all together
+``` php
+    #[DaggerFunction('run-integration-tests')]
+    public function runIntegrationTests(
+        #[DaggerArgument('The source code directory')]
+        Directory $source,
+    ): string {
+
+        $container = $this->laravelAppBuild($source);
+        $container = $this->loadContainerEnvVars($container, $source);
+
+        // Attach MariaDB
+        $dbService = $this->getDbService($source);
+        $container = $container->withServiceBinding('database', $dbService);
+
+        # Run Migrations and Tests
+        return $container
+            ->withExec($this->cmd('php artisan migrate'))
+            ->withExec($this->cmd('php artisan db:seed'))
+            ->withExec(['./vendor/bin/phpunit'])
+            ->stdout();
+    }
+```
+
+# EXTRAS
+
 Jeremy's module for loading all .env vars into the Container
 https://daggerverse.dev/mod/github.com/quartz-technology/daggerverse/magicenv@627fc4df7de8ce3bd8710fa08ea2db6cf16712b3
 - [ ] make generic function, to return the values ..
 - [ ] make function to return only the DB values
         db = dag.mariadb(version="latest", db_name="foo", db_user="bar", db_password="baz").serve()
 
+docker-compose version is ...
+mariadb:lts-jammy
 
 
 ### dagger install the mysql module, and then run dagger develop
